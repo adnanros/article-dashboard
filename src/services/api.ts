@@ -30,19 +30,21 @@ export function makeServer() {
         return schema.create("article", { ...attrs, id: String(Date.now()) });
       });
 
-      this.put("/articles/:id", (schema, request) => {
-  const attrs = JSON.parse(request.requestBody);
-  const id = request.params.id;
+      this.put(
+        "/articles/:id",
+        (schema: any, request: any): any => {
+            const id = request.params.id;
+            const attrs = JSON.parse(request.requestBody);
 
-  const article = schema.find("article", id);
-  if (!article) {
-    
-    return new Response(404, {}, { error: "Not found" });
-  }
+            const article = schema.find("article", id);
 
-  const updated = article.update(attrs);
-  return updated; 
-});
+            if (!article) {
+            return new Response(404, {}, { error: "Not found" });
+            }
+
+            return article.update(attrs);
+        }
+        );
 
       this.delete("/articles/:id", (schema, request) => {
         const id = request.params.id;

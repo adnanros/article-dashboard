@@ -1,58 +1,122 @@
 import React, { useEffect, useState } from 'react';
 import { useArticleContext } from '../context/ArticleContext';
+import Modal from '../components/Modal';
+import Button from '../components/Button';
 import Input from '../components/Input';
 import Select from '../components/Select';
-import Button from '../components/Button';
-import Modal from '../components/Modal';
-import ArticleList from '../components/ArticleList';
+import { Article } from '../types';
 
 const Home: React.FC = () => {
   const { articles, setArticles } = useArticleContext();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [filtered, setFiltered] = useState<Article[]>([]);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [showModal, setShowModal] = useState(false);
+  const [status, setStatus] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [formData, setFormData] = useState<Partial<Article>>({});
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     fetch('/api/articles')
-      .then((res) => res.json())
-      .then((data) => setArticles(data.articles))
-      .catch(() => setError('Failed to load articles'))
-      .finally(() => setLoading(false));
+      .then(res => res.json())
+      .then(data => setArticles(data.articles));
   }, [setArticles]);
 
-  const filtered = articles.filter(article =>
-    article.title.toLowerCase().includes(search.toLowerCase()) &&
-    (statusFilter ? article.status === statusFilter : true)
-  );
+  useEffect(() => {
+    const filteredData = articles.filter(article => {
+      return (
+        article.title.toLowerCase().includes(search.toLowerCase()) &&
+        (status === '' || article.status === status)
+      );
+    });
+    setFiltered(filteredData);
+  }, [search, status, articles]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.title || !formData.author || !formData.status) return;
+
+    const now = new Date().toISOString();
+    if (isEditing && formData.id !== undefined) {
+      await fetch(`/api/articles/${formData.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(formData),
+      });
+    } else {
+      await fetch('/api/articles', {
+        method: 'POST',
+        body: JSON.stringify({ ...formData, createdAt: now }),
+      });
+    }
+
+    const res = await fetch('/api/articles');
+    const data = await res.json();
+    setArticles(data.articles);
+    setModalOpen(false);
+    setFormData({});
+    setIsEditing(false);
+  };
+
+  const openEditModal = (article: Article) => {
+    setFormData(article);
+    setIsEditing(true);
+    setModalOpen(true);
+  };
 
   return (
-    <div className="p-4 space-y-4">
-      <div className="flex flex-col md:flex-row gap-4">
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Articles</h1>
+      <div className="flex gap-4 mb-4">
         <Input
-          label="Search"
-          placeholder="Search by title..."
+          placeholder="Search..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <Select
-          label="Status"
-          options={['Draft', 'Published']}
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          options={["Draft", "Published"]}
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
         />
-        <Button onClick={() => setShowModal(true)}>+ Add Article</Button>
+        <Button onClick={() => setModalOpen(true)}>Add Article</Button>
       </div>
 
-      {loading && <p>Loading articles...</p>}
-      {error && <p className="text-red-500">{error}</p>}
+      <ul className="space-y-2">
+        {filtered.map((article) => (
+          <li key={article.id} className="p-4 border rounded flex justify-between">
+            <div>
+              <h2 className="font-semibold">{article.title}</h2>
+              <p className="text-sm text-gray-600">By {article.author} | {article.status}</p>
+            </div>
+            <div>
+              <Button onClick={() => openEditModal(article)}>Edit</Button>
+            </div>
+          </li>
+        ))}
+      </ul>
 
-      <ArticleList articles={filtered} />
-
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
-        {/* AddArticleForm or EditArticleForm */}
-        <p>Form goes here...</p>
+      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
+        <h2 className="text-xl font-bold mb-4">{isEditing ? 'Edit' : 'Add'} Article</h2>
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <Input
+            label="Title"
+            value={formData.title || ''}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            required
+          />
+          <Input
+            label="Author"
+            value={formData.author || ''}
+            onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+            required
+          />
+          <Select
+            label="Status"
+            options={["Draft", "Published"]}
+            value={formData.status || ''}
+            onChange={(e) => setFormData({ ...formData, status: e.target.value as 'Draft' | 'Published' })}
+            required
+          />
+          <Button type="submit">{isEditing ? 'Update' : 'Create'}</Button>
+        </form>
       </Modal>
     </div>
   );

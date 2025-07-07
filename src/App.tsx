@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { makeServer } from './services/api';
+
 import logo from './logo.svg';
 import './App.css';
 
 function App() {
+  useEffect(() => {
+    makeServer();
+  }, []);
+
   return (
     <div className="App">
       <header className="App-header">

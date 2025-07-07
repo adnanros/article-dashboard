@@ -16,10 +16,8 @@ const Home: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    fetch('/api/articles')
-      .then(res => res.json())
-      .then(data => setArticles(data.articles));
-  }, [setArticles]);
+     fetchArticles();
+  }, []);
 
   useEffect(() => {
     const filteredData = articles.filter(article => {
@@ -30,6 +28,13 @@ const Home: React.FC = () => {
     });
     setFiltered(filteredData);
   }, [search, status, articles]);
+
+  //Packaging Fetching Articles
+  const fetchArticles = async () => {
+    const res = await fetch('/api/articles');
+    const data = await res.json();
+    setArticles(data.articles);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,12 +53,17 @@ const Home: React.FC = () => {
       });
     }
 
-    const res = await fetch('/api/articles');
-    const data = await res.json();
-    setArticles(data.articles);
+    fetchArticles();
     setModalOpen(false);
     setFormData({});
     setIsEditing(false);
+  };
+
+  const handleDelete = async (id: number) => {
+    await fetch(`/api/articles/${id}`, {
+      method: 'DELETE',
+    });
+    fetchArticles();
   };
 
   const openEditModal = (article: Article) => {
@@ -88,6 +98,9 @@ const Home: React.FC = () => {
             </div>
             <div>
               <Button onClick={() => openEditModal(article)}>Edit</Button>
+              <Button onClick={() => handleDelete(article.id)} className="bg-red-600 hover:bg-red-700">
+                Delete
+              </Button>
             </div>
           </li>
         ))}

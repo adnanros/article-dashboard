@@ -8,6 +8,7 @@ import Home from "./pages/Home";
 
 import logo from "./logo.svg";
 import "./App.css";
+import { AuthProvider } from "./context/AuthContext";
 
 function App() {
   useEffect(() => {
@@ -15,15 +16,17 @@ function App() {
   }, []);
 
   return (
-    <ArticleProvider>
+    <AuthProvider>
       <ThemeProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={<Home />} />
-          </Routes>
-        </Router>
+        <ArticleProvider>
+          <Router>
+            <Routes>
+              <Route path="/" element={<Home />} />
+            </Routes>
+          </Router>
+        </ArticleProvider>
       </ThemeProvider>
-    </ArticleProvider>
+    </AuthProvider>
   );
 }
 

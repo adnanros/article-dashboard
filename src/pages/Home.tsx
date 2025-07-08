@@ -5,6 +5,7 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import Select from '../components/Select';
 import { Article } from '../types';
+import Header from '../components/Header';
 
 const Home: React.FC = () => {
   const { articles, setArticles } = useArticleContext();
@@ -74,6 +75,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="p-6">
+      <Header />
       <h1 className="text-2xl font-bold mb-4">Articles</h1>
       <div className="flex gap-4 mb-4">
         <Input

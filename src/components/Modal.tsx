@@ -23,6 +23,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
+
   return (
     <div
       className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
@@ -32,7 +33,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
     >
       <div
         ref={modalRef}
-        className="bg-white dark:bg-gray-900 p-6 rounded shadow-lg w-full max-w-md relative outline-none"
+        className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white p-6 rounded shadow-lg w-full max-w-md relative outline-none"
         tabIndex={-1}
       >
         <button

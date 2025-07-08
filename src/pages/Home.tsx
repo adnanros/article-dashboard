@@ -9,6 +9,8 @@ import Header from '../components/Header';
 import AddArticleButton from '../components/AddArticleButton';
 import RoleSwitcher from '../components/RoleSwitcher';
 
+const PAGE_SIZE = 5;
+
 const Home: React.FC = () => {
   const { articles, setArticles } = useArticleContext();
   const [filtered, setFiltered] = useState<Article[]>([]);
@@ -17,9 +19,10 @@ const Home: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<Article>>({});
   const [isEditing, setIsEditing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-     fetchArticles();
+    fetchArticles();
   }, []);
 
   useEffect(() => {
@@ -30,9 +33,9 @@ const Home: React.FC = () => {
       );
     });
     setFiltered(filteredData);
+    setCurrentPage(1);
   }, [search, status, articles]);
 
-  //Packaging Fetching Articles
   const fetchArticles = async () => {
     const res = await fetch('/api/articles');
     const data = await res.json();
@@ -75,10 +78,13 @@ const Home: React.FC = () => {
     setModalOpen(true);
   };
 
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
   return (
     <div className="p-6">
-      <Header />\
-       <div className="flex justify-between items-center">
+      <Header />
+      <div className="flex justify-between items-center">
         <RoleSwitcher />
         <AddArticleButton onClick={() => setModalOpen(true)} />
       </div>
@@ -94,11 +100,10 @@ const Home: React.FC = () => {
           value={status}
           onChange={(e) => setStatus(e.target.value)}
         />
-        {/* <Button onClick={() => setModalOpen(true)}>Add Article</Button> */}
       </div>
 
       <ul className="space-y-2">
-        {filtered.map((article) => (
+        {paginated.map((article) => (
           <li key={article.id} className="p-4 border rounded flex justify-between">
             <div>
               <h2 className="font-semibold">{article.title}</h2>
@@ -113,6 +118,26 @@ const Home: React.FC = () => {
           </li>
         ))}
       </ul>
+
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-2 mt-4">
+          <button
+            className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+          >
+            Prev
+          </button>
+          <span className="self-center">Page {currentPage} of {totalPages}</span>
+          <button
+            className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+          >
+            Next
+          </button>
+        </div>
+      )}
 
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
         <h2 className="text-xl font-bold mb-4">{isEditing ? 'Edit' : 'Add'} Article</h2>

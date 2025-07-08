@@ -8,6 +8,7 @@ import { Article } from '../types';
 import Header from '../components/Header';
 import AddArticleButton from '../components/AddArticleButton';
 import RoleSwitcher from '../components/RoleSwitcher';
+import ArticleForm from '../components/ArticleForm';
 
 const PAGE_SIZE = 5;
 
@@ -17,8 +18,7 @@ const Home: React.FC = () => {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
-  const [formData, setFormData] = useState<Partial<Article>>({});
-  const [isEditing, setIsEditing] = useState(false);
+  const [editingArticle, setEditingArticle] = useState<Partial<Article> | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -42,27 +42,23 @@ const Home: React.FC = () => {
     setArticles(data.articles);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.title || !formData.author || !formData.status) return;
-
+  const handleFormSubmit = async (data: Partial<Article>) => {
     const now = new Date().toISOString();
-    if (isEditing && formData.id !== undefined) {
-      await fetch(`/api/articles/${formData.id}`, {
+    if (data.id !== undefined) {
+      await fetch(`/api/articles/${data.id}`, {
         method: 'PUT',
-        body: JSON.stringify(formData),
+        body: JSON.stringify(data),
       });
     } else {
       await fetch('/api/articles', {
         method: 'POST',
-        body: JSON.stringify({ ...formData, createdAt: now }),
+        body: JSON.stringify({ ...data, createdAt: now }),
       });
     }
 
-    fetchArticles();
+    await fetchArticles();
     setModalOpen(false);
-    setFormData({});
-    setIsEditing(false);
+    setEditingArticle(null);
   };
 
   const handleDelete = async (id: number) => {
@@ -73,8 +69,7 @@ const Home: React.FC = () => {
   };
 
   const openEditModal = (article: Article) => {
-    setFormData(article);
-    setIsEditing(true);
+    setEditingArticle(article);
     setModalOpen(true);
   };
 
@@ -86,7 +81,12 @@ const Home: React.FC = () => {
       <Header />
       <div className="flex justify-between items-center">
         <RoleSwitcher />
-        <AddArticleButton onClick={() => setModalOpen(true)} />
+        <AddArticleButton
+          onClick={() => {
+            setEditingArticle(null);
+            setModalOpen(true);
+          }}
+        />
       </div>
       <h1 className="text-2xl font-bold mb-4">Articles</h1>
       <div className="flex gap-4 mb-4">
@@ -96,22 +96,27 @@ const Home: React.FC = () => {
           onChange={(e) => setSearch(e.target.value)}
         />
         <Select
-          options={["Draft", "Published"]}
+          options={['Draft', 'Published']}
           value={status}
           onChange={(e) => setStatus(e.target.value)}
         />
       </div>
 
       <ul className="space-y-2">
-        {paginated.map((article) => (
+        {paginated.map(article => (
           <li key={article.id} className="p-4 border rounded flex justify-between">
             <div>
               <h2 className="font-semibold">{article.title}</h2>
-              <p className="text-sm text-gray-600">By {article.author} | {article.status}</p>
+              <p className="text-sm text-gray-600">
+                By {article.author} | {article.status}
+              </p>
             </div>
             <div>
               <Button onClick={() => openEditModal(article)}>Edit</Button>
-              <Button onClick={() => handleDelete(article.id)} className="bg-red-600 hover:bg-red-700">
+              <Button
+                onClick={() => handleDelete(article.id)}
+                className="bg-red-600 hover:bg-red-700"
+              >
                 Delete
               </Button>
             </div>
@@ -128,7 +133,9 @@ const Home: React.FC = () => {
           >
             Prev
           </button>
-          <span className="self-center">Page {currentPage} of {totalPages}</span>
+          <span className="self-center">
+            Page {currentPage} of {totalPages}
+          </span>
           <button
             className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
             disabled={currentPage === totalPages}
@@ -140,29 +147,13 @@ const Home: React.FC = () => {
       )}
 
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
-        <h2 className="text-xl font-bold mb-4">{isEditing ? 'Edit' : 'Add'} Article</h2>
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <Input
-            label="Title"
-            value={formData.title || ''}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            required
-          />
-          <Input
-            label="Author"
-            value={formData.author || ''}
-            onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-            required
-          />
-          <Select
-            label="Status"
-            options={["Draft", "Published"]}
-            value={formData.status || ''}
-            onChange={(e) => setFormData({ ...formData, status: e.target.value as 'Draft' | 'Published' })}
-            required
-          />
-          <Button type="submit">{isEditing ? 'Update' : 'Create'}</Button>
-        </form>
+        <h2 className="text-xl font-bold mb-4">
+          {editingArticle ? 'Edit' : 'Add'} Article
+        </h2>
+        <ArticleForm
+          initialData={editingArticle || {}}
+          onSubmit={handleFormSubmit}
+        />
       </Modal>
     </div>
   );

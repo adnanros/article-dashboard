@@ -32,11 +32,11 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
     >
       <div
         ref={modalRef}
-        className="bg-white p-6 rounded shadow-lg w-full max-w-md relative outline-none"
+        className="bg-white dark:bg-gray-900 p-6 rounded shadow-lg w-full max-w-md relative outline-none"
         tabIndex={-1}
       >
         <button
-          className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
+          className="absolute top-2 right-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
           onClick={onClose}
           aria-label="Close modal"
         >
